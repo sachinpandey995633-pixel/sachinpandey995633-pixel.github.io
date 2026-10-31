@@ -160,6 +160,25 @@
 
     .progress-bar-inner { height: 100%; background: linear-gradient(90deg, #38bdf8, #a855f7, #ec4899); width: 0%; transition: width 0.25s ease; }
 
+    .startup-screen {
+      position: fixed; inset: 0; z-index: 3000; display: grid; place-items: center;
+      background: radial-gradient(circle at 50% 35%, rgba(30, 58, 138, .42), rgba(7, 10, 19, .98) 66%);
+      transition: opacity .35s ease, visibility .35s ease;
+    }
+    .startup-screen.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .startup-card { width: min(360px, calc(100vw - 40px)); text-align: center; }
+    .startup-mark {
+      width: 62px; height: 62px; margin: 0 auto 1rem; border-radius: 18px; display: grid; place-items: center;
+      background: linear-gradient(135deg, #0284c7, #8b5cf6); box-shadow: 0 0 35px rgba(56, 189, 248, .35);
+      color: #fff; font-size: 1.65rem; animation: startup-pulse 1.4s ease-in-out infinite;
+    }
+    .startup-title { color: #fff; font: 800 1.25rem 'Sora', sans-serif; letter-spacing: -.02em; }
+    .startup-copy { color: #94a3b8; font-size: .73rem; margin-top: .45rem; }
+    .startup-track { height: 4px; margin: 1.25rem auto 0; max-width: 220px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.1); }
+    .startup-progress { width: 42%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #a855f7, #ec4899); animation: startup-progress 1.05s ease-in-out infinite; }
+    @keyframes startup-pulse { 50% { transform: scale(1.05); box-shadow: 0 0 48px rgba(168, 85, 247, .5); } }
+    @keyframes startup-progress { 0% { transform: translateX(-140%); } 100% { transform: translateX(360%); } }
+
     @media (max-width: 1180px) {
       .page-container { padding-right: 1.25rem; padding-left: 1.25rem; }
       .navbar-header { gap: 1rem; padding-right: 1rem; padding-left: 1rem; }
@@ -256,6 +275,15 @@
   </style>
 </head>
 <body>
+
+  <div id="startup-screen" class="startup-screen" role="status" aria-label="Loading AeroFind">
+    <div class="startup-card">
+      <div class="startup-mark"><i class="fa-solid fa-plane"></i></div>
+      <div class="startup-title">AeroFind</div>
+      <div class="startup-copy">Preparing your recovery workspace</div>
+      <div class="startup-track"><div class="startup-progress"></div></div>
+    </div>
+  </div>
 
   <div class="page-container">
 
@@ -893,6 +921,20 @@
           runScan(document.getElementById('pnr-input')?.value);
         });
       });
+    })();
+  </script>
+  <script>
+    (function () {
+      const screen = document.getElementById('startup-screen');
+      if (!screen) return;
+      const hide = function () {
+        window.setTimeout(function () { screen.classList.add('is-hidden'); }, 650);
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hide, { once: true });
+      } else {
+        hide();
+      }
     })();
   </script>
 
