@@ -813,7 +813,135 @@
     </div>
   </div>
 
-  <script src="aerofind -app/assets/app.js" defer></script>
+  <script>
+    (function () {
+      const $ = (id) => document.getElementById(id);
+      const show = (id) => $(id)?.classList.add('active');
+      const hide = (id) => $(id)?.classList.remove('active');
+      const setStatus = (id, message, color) => {
+        const node = $(id);
+        if (!node) return;
+        node.textContent = message;
+        node.style.display = 'block';
+        if (color) node.style.color = color;
+      };
+
+      window.openAIModal = () => show('ai-modal');
+      window.closeAIModal = () => hide('ai-modal');
+      window.openStaffModal = () => show('staff-modal');
+      window.closeStaffModal = () => hide('staff-modal');
+      window.openZDRInspector = () => {
+        show('zdr-modal');
+        const keys = $('ram-keys-list');
+        if (keys && !keys.innerHTML.trim()) {
+          keys.innerHTML = '<div style="color:#34d399;font-size:.78rem;"><i class="fa-solid fa-memory"></i> Temporary demo buffer ready</div><div style="color:#94a3b8;font-size:.7rem;margin-top:.5rem;">No raw booking reference is displayed or retained here.</div>';
+        }
+      };
+      window.closeZDRInspector = () => hide('zdr-modal');
+      window.openFeedbackForm = () => show('feedback-modal');
+      window.closeFeedbackForm = () => hide('feedback-modal');
+      window.scrollToSearch = () => {
+        $('pnr-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        $('pnr-input')?.focus();
+      };
+      window.scrollToHowItWorks = () => $('how-it-works')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.toggleChatbot = () => $('chatbot-window')?.classList.toggle('active');
+
+      window.handleChatKeyPress = (event) => {
+        if (event.key === 'Enter') window.sendChatMessage();
+      };
+      window.sendChatMessage = () => {
+        const input = $('chat-input');
+        const body = $('chat-body');
+        const value = input?.value.trim();
+        if (!value || !body) return;
+        body.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-user"></div>`);
+        body.lastElementChild.textContent = value;
+        const reply = /6e1234/i.test(value)
+          ? 'Sample 6E1234 is ready for pickup at Terminal 2, Lost & Found Desk B.'
+          : 'Try the sample reference 6E1234, or ask airport staff to create a recovery report.';
+        window.setTimeout(() => body.insertAdjacentHTML('beforeend', `<div class="chat-msg chat-bot">${reply}</div>`), 250);
+        input.value = '';
+        body.scrollTop = body.scrollHeight;
+      };
+
+      window.staffLogin = (event) => {
+        event.preventDefault();
+        const username = $('staff-username')?.value.trim().toLowerCase();
+        const password = $('staff-password')?.value;
+        if (username !== 'staff' || password !== 'demo1234') {
+          setStatus('staff-login-status', 'Demo login: use username staff and password demo1234.', '#fca5a5');
+          return;
+        }
+        $('staff-login-form').style.display = 'none';
+        $('staff-upload-panel').style.display = 'block';
+        setStatus('staff-upload-status', 'Signed in to the local demo workspace.', '#34d399');
+      };
+      window.staffLogout = () => {
+        $('staff-login-form').style.display = 'flex';
+        $('staff-upload-panel').style.display = 'none';
+        $('staff-login-status').style.display = 'none';
+      };
+      window.previewStaffPhoto = (input) => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const preview = $('staff-preview-img');
+        preview.src = URL.createObjectURL(file);
+        $('staff-photo-preview-box').style.display = 'block';
+      };
+      window.handleStaffUpload = (event) => {
+        event.preventDefault();
+        const list = $('staff-bags-list');
+        const pnr = $('staff-pnr')?.value.trim().toUpperCase() || 'DEMO';
+        const item = $('staff-item')?.value.trim() || 'Reported bag';
+        list.innerHTML = `<div style="padding:10px;border:1px solid rgba(52,211,153,.35);border-radius:10px;background:rgba(16,185,129,.08);font-size:.75rem;color:#d1fae5;"><strong>${pnr}</strong> · ${item}<br><span style="color:#94a3b8;">Saved in this browser demo workspace.</span></div>`;
+        setStatus('staff-upload-status', 'Bag report saved for the demo lookup flow.', '#34d399');
+      };
+      window.manualPurgeRAM = () => {
+        $('ram-keys-list').innerHTML = '<div style="color:#34d399;font-size:.78rem;"><i class="fa-solid fa-check"></i> Demo buffer purged.</div>';
+      };
+
+      document.addEventListener('DOMContentLoaded', () => {
+        $('ai-file-input')?.addEventListener('change', (event) => {
+          const file = event.target.files?.[0];
+          if (!file) return;
+          if (file.size > 4 * 1024 * 1024) {
+            event.target.value = '';
+            setStatus('ai-match-results', 'Please choose an image smaller than 4 MB.', '#fca5a5');
+            return;
+          }
+          const preview = $('ai-photo-preview');
+          preview.src = URL.createObjectURL(file);
+          preview.style.display = 'block';
+        });
+        $('ai-match-form')?.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const ref = $('ai-reference-input').value.trim().toUpperCase();
+          $('ai-match-results').innerHTML = `<div style="padding:12px;border-radius:10px;background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.35);color:#e9d5ff;font-size:.78rem;"><strong>94% simulated match signal</strong><br><span style="color:#cbd5e1;">Reference ${ref} is ready for staff verification. This is a synthetic demo, not live image analysis.</span></div>`;
+        });
+        $('staff-recovery-search')?.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const ref = $('staff-search-reference').value.trim().toUpperCase();
+          if (ref === '6E1234') {
+            hide('staff-modal');
+            window.runSampleSearch();
+          } else {
+            setStatus('staff-upload-status', 'No matching demo report. Try 6E1234.', '#facc15');
+          }
+        });
+        $('privacy-wipe-request-form')?.addEventListener('submit', (event) => {
+          event.preventDefault();
+          setStatus('privacy-wipe-status', 'Request sent to staff for approval. Nothing is deleted automatically.', '#facc15');
+        });
+        $('feedback-form')?.addEventListener('submit', (event) => {
+          event.preventDefault();
+          setStatus('feedback-status', 'Thank you—your anonymous demo feedback was recorded in memory.', '#34d399');
+          setStatus('feedback-count', 'Demo feedback count: 1', '#94a3b8');
+        });
+        $('chat-ai-status').textContent = 'Demo assistant ready · no external AI connection';
+      });
+    })();
+  </script>
   <script>
     (function () {
       function renderRecoveryResult(reference) {
