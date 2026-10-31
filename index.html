@@ -852,17 +852,45 @@
         results.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
+      function runScan(reference) {
+        const modal = document.getElementById('scan-modal');
+        const progress = document.getElementById('progress-bar');
+        const input = document.getElementById('pnr-input');
+        const normalized = String(reference || '').trim().toUpperCase();
+        if (input) input.value = normalized;
+
+        if (!modal || !progress) {
+          renderRecoveryResult(normalized);
+          return;
+        }
+
+        modal.classList.add('active');
+        progress.style.width = '0%';
+        let value = 0;
+        const timer = window.setInterval(function () {
+          value = Math.min(value + 10, 100);
+          progress.style.width = value + '%';
+          if (value === 100) {
+            window.clearInterval(timer);
+            window.setTimeout(function () {
+              modal.classList.remove('active');
+              progress.style.width = '0%';
+              renderRecoveryResult(normalized);
+            }, 250);
+          }
+        }, 90);
+      }
+
       window.runSampleSearch = function () {
         const input = document.getElementById('pnr-input');
-        if (input) input.value = '6E1234';
-        renderRecoveryResult('6E1234');
+        runScan(input ? '6E1234' : '6E1234');
       };
 
       document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('pnr-form');
         if (form) form.addEventListener('submit', function (event) {
           event.preventDefault();
-          renderRecoveryResult(document.getElementById('pnr-input')?.value);
+          runScan(document.getElementById('pnr-input')?.value);
         });
       });
     })();
